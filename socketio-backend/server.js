@@ -14,8 +14,6 @@ let messages = [];
 
 io.on('connection', (socket) => {
 
-  handleNewUser(socket.id);
-
   //Load messages on connection if any
   if (messages.length > 0) {
     socket.emit('updateMessages', messages);
@@ -24,25 +22,38 @@ io.on('connection', (socket) => {
   //Sets or updates alias for a specific user
   socket.on('setAlias', (changedUser) => {
     let index = connectedUsers.findIndex(user => user.uuid === changedUser.uuid);
-    connectedUsers[index]['alias'] = changedUser.alias;
 
-    changeAliasForMessagesFrom(changedUser);
+    if (index >= 0) {
+      connectedUsers[index]['alias'] = changedUser.alias;
+      changeAliasForMessagesFrom(changedUser);
+    } else {
+      handleNewUser(socket.id, changedUser.alias);
+    }
     io.emit('updateMessages', messages);
     io.emit("updateUsers", connectedUsers);
-
   })
 
   //Stores a message to the server and emits the changes to the frontend
   socket.on('storeMessage', (message) => {
-    messages = [...messages, message];
+    let index = connectedUsers.findIndex(user => user.uuid === message.uuid);
 
-    io.emit('updateMessages', messages);
+    if (index >= 0) {
+      messages = [...messages, message];
+      io.emit('updateMessages', messages);
+    } else {
+      io.to(socket.id).emit("resetConnection");
+      io.emit('updateMessages', messages);
+      io.to(socket.id).emit("updateUsers", connectedUsers);
+    }
+
   });
 
   //Remove user from the server on disconnect
   socket.on('disconnect', () => {
     let index = connectedUsers.findIndex(user => user.uuid === socket.id);
     connectedUsers.splice(index, 1);
+
+    io.to(socket.id).emit("closeConnection");
 
     io.emit("updateUsers", connectedUsers);
   });
@@ -59,10 +70,10 @@ function changeAliasForMessagesFrom(changedUser) {
 }
 
 //Assign user uuid and notice the frontend
-function handleNewUser(uuid) {
+function handleNewUser(uuid, alias = '') {
   let connectedUser = {
     uuid: uuid,
-    alias: ''
+    alias: alias
   };
   connectedUsers.push(connectedUser);
 
