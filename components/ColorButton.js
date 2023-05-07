@@ -1,7 +1,6 @@
 import React from 'react';
 import colorConfig from '../theme/config';
 
-
 const ColorButton = ({ color, onClick, selectedColor }) => {
 
   const colorClass = colorConfig[color];
@@ -23,7 +22,7 @@ const ColorButton = ({ color, onClick, selectedColor }) => {
       ></div>
       {capitalizedColor(color)}
     </button>
-  );  
+  );
 };
 
 export default ColorButton;

@@ -1,8 +1,7 @@
 import Head from 'next/head';
-import styles from '../styles/Home.module.css'
 import colorConfig from '../theme/config';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { MdMode } from "react-icons/md";
 import { HiOutlineUserCircle } from "react-icons/hi";
@@ -22,6 +21,9 @@ export default function Home() {
   const [alias, setAlias] = useState('');
   const [connectedUser, setConnectedUser] = useState({});
   const [connectedUsers, setConnectedUsers] = useState([]);
+  const [pickerOpened, setPickerOpened] = useState(false);
+  const chatInputRef = useRef(null);
+
 
   useEffect(() => {
     const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL);
@@ -75,6 +77,16 @@ export default function Home() {
       socket.emit('setAlias', connectedUser);
       setAlias('');
     }
+  }
+
+  const handleEmojiClick = useCallback((emoji) => {
+    if (chatInputRef.current) {
+      chatInputRef.current(emoji);
+    }
+  }, []);
+
+  const handleOpenPicker = () => {
+    setPickerOpened(!pickerOpened);
   }
   return (
     <div>
@@ -140,21 +152,21 @@ export default function Home() {
           <main className='flex flex-col mx-2 md:mx-0 md:flex-row my-8 rounded-3xl min-h-full w-full overflow-hidden shadow-2xl'>
             <div id="connected-users" className='w-full md:w-1/3 bg-gradient-to-b from-blue1 text-white to-blue2'>
               {
-                
+
                 connectedUsers.length > 0 ? (
                   <div className='p-4'>
                     <div className='flex justify-center items-center'><IoPeopleSharp className='text-xl mr-2' /> Connected Users</div>
                     {
                       connectedUsers.map((user, i) =>
-                      <div key={i}>
-                        <span className='flex items-center'>
-                          <HiOutlineUserCircle
-                            className={`mr-2 ${colorConfig[user.color].text}`}
-                          />
-                          {user.alias}
-                        </span>
-                      </div>
-                    )
+                        <div key={i}>
+                          <span className='flex items-center'>
+                            <HiOutlineUserCircle
+                              className={`mr-2 ${colorConfig[user.color].text}`}
+                            />
+                            {user.alias}
+                          </span>
+                        </div>
+                      )
                     }
                   </div>
                 ) : (
@@ -168,8 +180,8 @@ export default function Home() {
             <div id="chat-container" className='w-full md:w-2/3 bg-blue-50 h-full'>
               {socket ? (
                 <div className='h-full relative'>
-                  <Chat socket={socket} connectedUser={connectedUser} className="h-5/6" />
-                  <ChatInput socket={socket} connectedUser={connectedUser} className="absolute inset-x-0 bottom-0 h-16" />
+                  <Chat socket={socket} connectedUser={connectedUser} onEmojiClick={handleEmojiClick} pickerShow={pickerOpened} className="h-5/6" />
+                  <ChatInput socket={socket} connectedUser={connectedUser} handleEmojiClick={(ref) => (chatInputRef.current = ref)} onPickerClick={handleOpenPicker} className="absolute inset-x-0 bottom-0 h-16" />
                 </div>
               ) : (
                 <div>Not Connected</div>
