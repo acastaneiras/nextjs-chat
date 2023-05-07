@@ -27,7 +27,7 @@ io.on('connection', (socket) => {
       connectedUsers[index]['alias'] = changedUser.alias;
       changeAliasForMessagesFrom(changedUser);
     } else {
-      handleNewUser(socket.id, changedUser.alias);
+      handleNewUser(socket.id, changedUser.alias, changedUser.color);
     }
     io.emit('updateMessages', messages);
     io.emit("updateUsers", connectedUsers);
@@ -45,7 +45,6 @@ io.on('connection', (socket) => {
       io.emit('updateMessages', messages);
       io.to(socket.id).emit("updateUsers", connectedUsers);
     }
-
   });
 
   //Remove user from the server on disconnect
@@ -70,10 +69,11 @@ function changeAliasForMessagesFrom(changedUser) {
 }
 
 //Assign user uuid and notice the frontend
-function handleNewUser(uuid, alias = '') {
+function handleNewUser(uuid, alias = '', color = '') {
   let connectedUser = {
     uuid: uuid,
-    alias: alias
+    alias: alias,
+    color: color
   };
   connectedUsers.push(connectedUser);
 
